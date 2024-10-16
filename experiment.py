@@ -73,3 +73,31 @@ for var in ordinal_vars:
 print("\nCorrelation between encoded nominal variables and transformed target variable (after transformation):")
 corr_nominal_after = df_encoded[nominal_encoded_vars + ['duration_seconds_log']].corr()
 print(corr_nominal_after['duration_seconds_log'].sort_values(ascending=False))
+
+
+
+
+import pandas as pd
+
+# Ensure 'OUTAGE_BEGIN_DATE' is in datetime format
+df['OUTAGE_BEGIN_DATE'] = pd.to_datetime(df['OUTAGE_BEGIN_DATE'])
+
+# Extract date components
+df['year'] = df['OUTAGE_BEGIN_DATE'].dt.year
+df['month'] = df['OUTAGE_BEGIN_DATE'].dt.month
+df['day'] = df['OUTAGE_BEGIN_DATE'].dt.day
+df['hour'] = df['OUTAGE_BEGIN_DATE'].dt.hour
+df['minute'] = df['OUTAGE_BEGIN_DATE'].dt.minute
+df['second'] = df['OUTAGE_BEGIN_DATE'].dt.second
+df['dayofweek'] = df['OUTAGE_BEGIN_DATE'].dt.dayofweek        # Monday=0, Sunday=6
+df['day_name'] = df['OUTAGE_BEGIN_DATE'].dt.day_name()        # e.g., 'Monday'
+df['weekofyear'] = df['OUTAGE_BEGIN_DATE'].dt.isocalendar().week
+df['quarter'] = df['OUTAGE_BEGIN_DATE'].dt.quarter
+df['is_weekend'] = df['OUTAGE_BEGIN_DATE'].dt.dayofweek >= 5  # Saturday and Sunday
+
+
+# Update your variable lists
+numerical_vars.extend(['year', 'month', 'day', 'hour', 'minute', 'second', 'weekofyear', 'is_weekend'])
+ordinal_vars.extend(['dayofweek', 'quarter'])
+# 'day_name' has been one-hot encoded, so nominal_vars includes the new columns
+nominal_vars.extend([col for col in df.columns if 'day_name_' in col])
