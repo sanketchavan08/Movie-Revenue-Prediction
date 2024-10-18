@@ -101,3 +101,33 @@ numerical_vars.extend(['year', 'month', 'day', 'hour', 'minute', 'second', 'week
 ordinal_vars.extend(['dayofweek', 'quarter'])
 # 'day_name' has been one-hot encoded, so nominal_vars includes the new columns
 nominal_vars.extend([col for col in df.columns if 'day_name_' in col])
+
+
+import pandas as pd
+
+def convert_bool_values_to_int(df):
+    """
+    Converts boolean values (True/False) in all columns of the DataFrame to integers (1/0).
+
+    Parameters:
+    df (pd.DataFrame): The DataFrame to process.
+
+    Returns:
+    pd.DataFrame: The DataFrame with boolean values converted to integers.
+    """
+    # Create a copy of the DataFrame to avoid modifying the original data
+    df_converted = df.copy()
+    
+    # Iterate over each column in the DataFrame
+    for col in df_converted.columns:
+        # Check if the column is of boolean data type
+        if df_converted[col].dtype == 'bool':
+            # Convert boolean column to integer
+            df_converted[col] = df_converted[col].astype(int)
+        else:
+            # Check if the column contains any boolean values
+            if df_converted[col].isin([True, False]).any():
+                # Replace True with 1 and False with 0
+                df_converted[col] = df_converted[col].replace({True: 1, False: 0})
+    return df_converted
+
