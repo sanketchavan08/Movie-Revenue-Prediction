@@ -4,7 +4,7 @@
 PATHS=("/home/sftpec/ubs/inbox/" "/home/sftpec/ubs/inbox/archive/")
 
 # Output header
-echo "Location,Filename,Modified Date,Size (KB),Line Count,Rerun Needed"
+echo "Sr. No,Location,Filename,Modified Date,Size (KB),Line Count,Rerun Needed"
 
 # Create an array to store output lines
 OUTPUT_LINES=()
@@ -44,8 +44,10 @@ do
     done
 done
 
-# Sort and display the output
-for LINE in "${OUTPUT_LINES[@]}" | sort -t, -k1,1 -k3,3r
-    do
-        echo "$LINE"
-    done
+# Display the output with Sr. No
+SR_NO=1
+for LINE in "${OUTPUT_LINES[@]}"
+do
+    echo "$SR_NO,$LINE"
+    SR_NO=$((SR_NO + 1))
+done
