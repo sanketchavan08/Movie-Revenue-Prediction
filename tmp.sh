@@ -4,7 +4,10 @@
 PATHS=("/home/sftpec/ubs/inbox/" "/home/sftpec/ubs/inbox/archive/")
 
 # Output header
-echo "Filename,Modified Date,Size (KB),Line Count,Rerun Needed,Location"
+echo "Location,Filename,Modified Date,Size (KB),Line Count,Rerun Needed"
+
+# Create an array to store output lines
+OUTPUT_LINES=()
 
 # Loop through the defined paths
 for PATH in "${PATHS[@]}"
@@ -35,8 +38,14 @@ do
                 RERUN_NEEDED="No"
             fi
 
-            # Output the information in comma-separated format
-            echo "$FILENAME,$MODIFIED_DATE,$SIZE_KB,$LINE_COUNT,$RERUN_NEEDED,$LOCATION"
+            # Add the information to the output array
+            OUTPUT_LINES+=("$LOCATION,$FILENAME,$MODIFIED_DATE,$SIZE_KB,$LINE_COUNT,$RERUN_NEEDED")
         fi
     done
 done
+
+# Sort and display the output
+for LINE in "${OUTPUT_LINES[@]}" | sort -t, -k1,1 -k3,3r
+    do
+        echo "$LINE"
+    done
