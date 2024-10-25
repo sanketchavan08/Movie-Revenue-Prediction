@@ -91,3 +91,14 @@ print_table(combined_corr_df, headers)
 
 # Display the top variables for each category
 print_top_variables(numerical_corr_df, ordinal_corr_df, nominal_corr_df)
+
+
+
+
+print("\nInterpretation: Numerical variables are assessed using Pearson correlation. The higher the absolute value, the stronger the linear relationship with the target variable ('DURATION_SECONDS'). Consider keeping variables with high correlation values for modeling, while weaker ones might be candidates for exclusion or transformation.")
+
+
+    print("\nInterpretation: Ordinal variables are assessed using Spearman correlation to capture their ranked nature. Higher values indicate a strong monotonic relationship with the target variable. This helps in identifying the most influential ordinal features, which are likely to be crucial for accurate predictions.")
+
+
+    print("\nInterpretation: Nominal variables are evaluated using ANOVA (F-statistic), which indicates how well these categorical variables explain the variance in the target variable. A higher F-statistic and lower p-value signify that the variable effectively distinguishes between different categories in relation to 'DURATION_SECONDS'. Consider using variables with high F-statistics for further analysis or model inclusion.")
