@@ -1,3 +1,22 @@
 language used :  Python 
 
+Data Issue Scenarios and Remediation by EAP
+Notifying the Downstream RTB Team of Control-M Job Failures on the EAP Side
 
+If any EAP Control-M job fails for a specific broker feed, the EAP team must:
+Immediately notify the RTB team.
+Provide the failure reason and an estimated time for resolution (ETA).
+Prompt notification enables the RTB team to inform stakeholders of potential delays and facilitates quicker resolution, especially if the issue originates from the broker.
+All Control-M jobs on the EAP side should have automatic incident (INC) creation enabled to generate a ticket, allowing for efficient tracking and management of issues through the INC system.
+Proper Handling of Backdated Feed Processing to Prevent ETRA Job Failures
+
+The EAP team should not use the current ODATE job to process backdated feeds, as this leads to offsets and incorrect conditions in ETRA jobs, causing failures.
+For example:
+If processing a file dated November 1, 2024, the EAP team should use the November 1 ODATE job specifically for that date.
+Using today’s ODATE job to process backdated data triggers the RTB job, causing RTB to assume current data is available. This mismatch leads ETRA to fail due to missing partitions for today’s data, generating an INC on the ETRA side when it is not a true issue.
+Notifying RTB in Case of EAP Downtime or Infrastructure Issues
+
+In the event of any EAP downtime or infrastructure-related issues, the EAP team should:
+Immediately inform the RTB team.
+Provide details on the issue’s nature and an ETA for resolution.
+Prompt communication ensures that RTB can take proactive measures, including notifying stakeholders of potential delays or disruptions.
