@@ -1,13 +1,3 @@
 language used :  Python 
 
 
-This Key Operating Document (KOD) provides the EAP team with essential guidelines for managing and processing employee compliance data. As the centralized data lake, EAP handles external broker feeds, generating Avro files that are then loaded into Compliance databases. The process relies on Control-M jobs, where successful EAP jobs trigger subsequent Compliance RTB jobs, ensuring seamless data flow. This document outlines key procedures and standards for efficient and accurate data processing between EAP and Compliance teams.
-
-
-Purpose: To provide the EAP team with an operational guide for managing and processing external broker feeds for compliance use.
-
-Focus Areas:
-
-Ensuring timely and accurate data processing for downstream Compliance RTB.
-Establishing communication protocols to notify Compliance RTB of any data delays or issues.
-Intended Audience: This document is exclusively for the EAP team, outlining responsibilities to meet compliance requirements for data timeliness and availability.
