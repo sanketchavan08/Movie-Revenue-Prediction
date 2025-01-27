@@ -94,19 +94,26 @@ def main():
 
     
     # Convert numeric columns and format rows
-    def format_row(row):
-        for col in columns_to_format:
-            if col < len(row):  # Ensure column exists
-                if col in [2, 4, 10] and isinstance(row[col], (float, int)):
-                    # Format columns C, E, and K with 6 digits after decimal and replace '.' with ','
-                    row[col] = f"{row[col]:.6f}".replace('.', ',')
-                elif col == 6:  # Column G, keep as integer
-                    row[col] = int(row[col]) if not pd.isna(row[col]) else ''
-                elif col == 5:  # Column F, keep as YYYYMMDD
-                    row[col] = str(int(row[col])) if not pd.isna(row[col]) else ''
-                elif pd.isna(row[col]):  # Handle empty columns (e.g., H) to keep them empty
-                    row[col] = ''
-        return ';'.join(map(str, row))
+def format_row(row):
+    for col in range(len(row)):
+        if col in [2, 4, 10]:  # Columns C, E, K (zero-indexed)
+            if isinstance(row[col], (float, int)):
+                # Format with 6 digits after decimal and replace '.' with ','
+                row[col] = f"{row[col]:.6f}".replace('.', ',')
+        elif col == 5:  # Column F (YYYYMMDD)
+            if isinstance(row[col], pd.Timestamp):
+                row[col] = row[col].strftime('%Y%m%d')  # Convert Timestamp to YYYYMMDD
+            elif isinstance(row[col], (float, int)):
+                row[col] = str(int(row[col]))  # Keep as integer in string form
+        elif col == 6:  # Column G (integer)
+            if isinstance(row[col], float) and row[col].is_integer():
+                row[col] = int(row[col])  # Convert float-like integers to int
+            elif pd.isna(row[col]):
+                row[col] = ''  # Handle NaN
+        elif pd.isna(row[col]):  # Handle empty columns (e.g., H)
+            row[col] = ''
+    return ';'.join(map(str, row))
+
     processed_rows = middle_rows.apply(format_row, axis=1) if not middle_rows.empty else []
 
     # Write to output file
