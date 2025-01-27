@@ -94,16 +94,18 @@ def main():
 
     
     # Convert numeric columns and format rows
-def format_row(row):
+    def format_row(row):
         for col in columns_to_format:
             if col < len(row):  # Ensure column exists
                 if col in [2, 4, 10] and isinstance(row[col], (float, int)):
                     # Format columns C, E, and K with 6 digits after decimal and replace '.' with ','
                     row[col] = f"{row[col]:.6f}".replace('.', ',')
                 elif col == 6:  # Column G, keep as integer
-                    row[col] = row[col] if isinstance(row[col], int) else int(row[col])
+                    row[col] = int(row[col]) if not pd.isna(row[col]) else ''
                 elif col == 5:  # Column F, keep as YYYYMMDD
-                    row[col] = row[col] if isinstance(row[col], str) or isinstance(row[col], (float, int)) else row[col]
+                    row[col] = str(int(row[col])) if not pd.isna(row[col]) else ''
+                elif pd.isna(row[col]):  # Handle empty columns (e.g., H) to keep them empty
+                    row[col] = ''
         return ';'.join(map(str, row))
     processed_rows = middle_rows.apply(format_row, axis=1) if not middle_rows.empty else []
 
