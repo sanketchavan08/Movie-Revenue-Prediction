@@ -92,14 +92,17 @@ def main():
     middle_rows = df.iloc[1:-1] if len(df) > 2 else pd.DataFrame()
     columns_to_format = [2, 5, 10]  # Columns C, F, and K (zero-indexed)
 
+    
     # Convert numeric columns and format rows
     def format_row(row):
         for col in columns_to_format:
             if col < len(row):  # Ensure column exists
-                if isinstance(row[col], (float, int)):
-                    row[col] = f"{row[col]:.2f}".replace('.', ',')
+                if col in [2, 4, 10] and isinstance(row[col], (float, int)):
+                    # Format columns C, E, and K with 6 digits after decimal and replace '.' with ','
+                    row[col] = f"{row[col]:.6f}".replace('.', ',')
+                elif col == 6:  # Column G, keep as is
+                    row[col] = row[col] if isinstance(row[col], (float, int)) else row[col]
         return ';'.join(map(str, row))
-
     processed_rows = middle_rows.apply(format_row, axis=1) if not middle_rows.empty else []
 
     # Write to output file
