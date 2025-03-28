@@ -1,3 +1,4 @@
 language used :  Python 
+=IF(AND(A2="Yes",NOT(ISBLANK(G2))),TEXTJOIN(",",TRUE,IF(rules!E:E=G2,rules!A:A,"")),"")
 
 
