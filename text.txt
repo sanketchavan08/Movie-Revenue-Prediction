@@ -2,3 +2,8 @@ language used :  Python
 =IF(AND(A2="Yes",NOT(ISBLANK(G2))),TEXTJOIN(",",TRUE,IF(rules!E:E=G2,rules!A:A,"")),"")
 
 
+
+
+i=1; for f in /home/jhdgsf/jhdsgf/insdr*.csv; do mv "$f" "/home/jhdgsf/jhdsgf/ignore${i}.txt"; i=$((i+1)); done
+
+
