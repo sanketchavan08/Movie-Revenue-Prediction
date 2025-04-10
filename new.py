@@ -43,13 +43,29 @@ for i, missed_row in missed_trades_df.iterrows():
         missed_trades_df.at[i, "ETRA_REQUEST_TS"] = match["REQUEST_TS"]
         missed_trades_df.at[i, "STATUS"] = match["STATUS_CODE"]
         missed_trades_df.at[i, "ETRA_VALUE"] = match["VALUE"]
-        continue  # Skip to next row
+        continue  # skip to next row if full match found
 
-    # === Partial Match: Only if full match didn't happen ===
+    # === Partial Match Debug Diagnostics ===
     if missed_trades_df.at[i, "Match found in etra?"] in ["", "No", None]:
-        partial_match = pre_clearance_df[
-            (pre_clearance_df["HR_EMPLOYEE_ID"] == emp_id) &
-            (pre_clearance_df["REQUEST_TS"] == withdrawal_date)
+        print(f"\n🔍 ROW {i}: Attempting partial match")
+        print(f"  Employee Number: {emp_id}")
+        print(f"  Withdrawal Date: {withdrawal_date} ({type(withdrawal_date)})")
+
+        emp_matches = pre_clearance_df[pre_clearance_df["HR_EMPLOYEE_ID"] == emp_id]
+        print(f"  Found {len(emp_matches)} rows with matching Employee ID in pre_clearance_trade")
+
+        if not emp_matches.empty:
+            print("  REQUEST_TS values for this employee:")
+            print(emp_matches["REQUEST_TS"].unique())
+
+            match_on_date = emp_matches[
+                pd.to_datetime(emp_matches["REQUEST_TS"]).dt.date == withdrawal_date
+            ]
+            print(f"  ➕ {len(match_on_date)} rows where REQUEST_TS == Withdrawal Timestamp")
+
+        # Try actual partial match
+        partial_match = emp_matches[
+            pd.to_datetime(emp_matches["REQUEST_TS"]).dt.date == withdrawal_date
         ]
 
         if not partial_match.empty:
@@ -67,4 +83,4 @@ with pd.ExcelWriter(output_path, engine="openpyxl", mode="w") as writer:
     pre_clearance_df.to_excel(writer, sheet_name="pre-clearance_trade", index=False)
     missed_trades_df.to_excel(writer, sheet_name="missed_trades_last2yrs", index=False)
 
-print(f"✅ Matching complete. Output saved to: {output_path}")
+print(f"\n✅ Matching complete. Output saved to: {output_path}")
