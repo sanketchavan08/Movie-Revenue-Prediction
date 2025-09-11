@@ -131,3 +131,97 @@ def format_row(row):
 
 if __name__ == "__main__":
     main()
+
+
+
+
+-- === Point-in-time WL check, with concatenated (CR_DEAL_ID|RGN_CD) tuples ===
+WITH
+-- 1) Paste your Excel rows here (generate UNION ALL lines in Excel)
+pairs AS (
+  SELECT
+    15696017    AS trade_request_id,
+    'megan_kwong@db.com' AS email,
+    DATE '2025-07-28' AS trade_dt,                -- column C (TRUNC(CREATEDDT))
+    'AUTO_APPROVE' AS request_final_status,       -- column D
+    8588080     AS hr_id,                         -- column E
+    'HONG KONG' AS country,                       -- column F
+    'APAC'      AS region_from_sheet,             -- column G (keep if you want side-by-side)
+    'US02079K3059' AS isin                        -- column H
+  FROM dual
+  UNION ALL
+  SELECT
+    15699095, 'manjusha.gole@db.com',
+    DATE '2025-07-28',
+    'AUTO_APPROVE',
+    8631432,
+    'INDIA',
+    'APAC',
+    'INE200M01039'
+  FROM dual
+  -- ... add the rest of your rows
+),
+
+-- 2) Watchlist history. Carry CR_DEAL_ID and RGN_CD from your base query.
+base AS (
+  SELECT
+    fi.fncl_ins_isin,
+    dll.list_add_dt,
+    dll.list_removal_dt,
+    di.crtn_dt,
+    di.off_dt,
+    di.cr_deal_id,         -- <== from your screenshot (use exact column name)
+    de.rgn_cd              -- <== region code from DEAL
+  FROM cru_owner.dl_list        dll
+  JOIN cru_owner.deal_company   dc ON dc.dl_cmpy_id  = dll.dl_cmpy_id
+  JOIN cru_owner.cmpy           cp ON cp.cmpy_id     = dc.cmpy_id
+  JOIN cru_owner.deal           de ON de.deal_id     = dc.deal_id     -- adjust if your join differs
+  JOIN cru_owner.dl_ins         di ON di.dl_cmpy_id  = dc.dl_cmpy_id
+  JOIN cru_owner.fncl_ins       fi ON fi.fncl_ins_id = di.fncl_ins_id
+  WHERE dll.list_ty_id = 325    -- Watchlist
+),
+
+-- 3) Point-in-time join to keep only rows active on the trade date
+joined AS (
+  SELECT
+    p.*,
+    b.cr_deal_id,
+    b.rgn_cd
+  FROM pairs p
+  LEFT JOIN base b
+    ON b.fncl_ins_isin = p.isin
+   AND b.crtn_dt                        <= p.trade_dt
+   AND NVL(b.off_dt, DATE '9999-12-31') >  p.trade_dt
+   AND b.list_add_dt                    <= p.trade_dt
+   AND (b.list_removal_dt IS NULL OR b.list_removal_dt >= p.trade_dt)
+)
+
+-- 4) Final: one row per Excel line with YES/NO and concatenated tuples
+SELECT
+  j.trade_request_id,
+  j.email,
+  j.trade_dt,
+  j.request_final_status,
+  j.hr_id,
+  j.country,
+  j.region_from_sheet,
+  j.isin,
+  CASE WHEN COUNT(j.cr_deal_id) > 0 THEN 'YES' ELSE 'NO' END AS wl_yn,
+  CASE
+    WHEN COUNT(j.cr_deal_id) = 0 THEN NULL
+    ELSE
+      LISTAGG(pair_txt, ', ') WITHIN GROUP (ORDER BY pair_txt)
+  END AS deal_region_tuples   -- e.g. '(E00555808|EMEA), (E00558734|EMEA)'
+FROM (
+  -- de-dup pair text before aggregating (safer than LISTAGG DISTINCT on older versions)
+  SELECT DISTINCT
+         trade_request_id, email, trade_dt, request_final_status, hr_id,
+         country, region_from_sheet, isin,
+         cr_deal_id, rgn_cd,
+         '(' || cr_deal_id || '|' || NVL(rgn_cd,'NA') || ')' AS pair_txt
+  FROM joined
+) j
+GROUP BY
+  j.trade_request_id, j.email, j.trade_dt, j.request_final_status,
+  j.hr_id, j.country, j.region_from_sheet, j.isin
+ORDER BY j.trade_request_id, j.trade_dt, j.isin;
