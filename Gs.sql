@@ -128,3 +128,10 @@ LEFT JOIN wl_agg  w USING (trade_request_id, email, trade_dt, request_final_stat
 LEFT JOIN emp_agg e USING (trade_request_id, email, trade_dt, request_final_status,
                            hr_id, country, region_from_sheet, isin)
 ORDER BY p.trade_request_id, p.trade_dt, p.isin;
+
+
+
+="SELECT " & A2 & ", '" & SUBSTITUTE(B2,"'","''") & "', DATE '" &
+TEXT(C2,"yyyy-mm-dd") & "', '" & SUBSTITUTE(D2,"'","''") & "', " &
+(A2*0+E2) & ", '" & SUBSTITUTE(F2,"'","''") & "', '" &
+SUBSTITUTE(G2,"'","''") & "', '" & SUBSTITUTE(H2,"'","''") & "' FROM dual"
