@@ -135,3 +135,45 @@ ORDER BY p.trade_request_id, p.trade_dt, p.isin;
 TEXT(C2,"yyyy-mm-dd") & "', '" & SUBSTITUTE(D2,"'","''") & "', " &
 (A2*0+E2) & ", '" & SUBSTITUTE(F2,"'","''") & "', '" &
 SUBSTITUTE(G2,"'","''") & "', '" & SUBSTITUTE(H2,"'","''") & "' FROM dual"
+
+
+
+WITH
+pairs AS (
+  /* Paste your rows here: first row CASTs to lock types, rest plain SELECTs */
+  SELECT
+    CAST(15696017 AS NUMBER) AS trade_request_id,
+    CAST('megan_kwong@db.com' AS VARCHAR2(120)) AS email,
+    DATE '2025-07-28' AS trade_dt,
+    CAST('AUTO_APPROVE' AS VARCHAR2(30)) AS request_final_status,
+    CAST(8588080 AS NUMBER) AS hr_id,
+    CAST('HONG KONG' AS VARCHAR2(60)) AS country,
+    CAST('APAC' AS VARCHAR2(20)) AS region_from_sheet,
+    CAST('US02079K3059' AS VARCHAR2(24)) AS isin
+  FROM dual
+  UNION ALL
+  SELECT 15699095, 'manjusha.gole@db.com', DATE '2025-07-28',
+         'AUTO_APPROVE', 8631432, 'INDIA', 'APAC', 'INE200M01039' FROM dual
+  /* ... more UNION ALL SELECT ... FROM dual */
+)
+SELECT
+  p.trade_request_id,
+  p.email,
+  p.trade_dt,
+  p.request_final_status,
+  p.hr_id,
+  p.country,
+  p.region_from_sheet,
+  p.isin,
+  CASE
+    WHEN EXISTS (
+      SELECT /*+ LEADING(p) USE_NL(e) */ 1
+      FROM cru_owner.v_wallis_deal_team e
+      WHERE e.db_people_id = CAST(p.hr_id AS VARCHAR2(50))
+        AND TRUNC(e.start_date) <= p.trade_dt
+        AND (e.end_date IS NULL OR TRUNC(e.end_date) >= p.trade_dt)
+    )
+    THEN 'YES' ELSE 'NO'
+  END AS emp_on_deal_yn
+FROM pairs p
+ORDER BY p.trade_request_id, p.trade_dt, p.isin;
