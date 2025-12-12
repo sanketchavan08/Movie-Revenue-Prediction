@@ -1,39 +1,3 @@
-/* ============================================================
-   TAB 2 – Request 2b: WATCH LIST ADDITIONS ONLY (WL, with ISIN)
-   Grain: 1 row per (CM_DEAL_ID, CMPY_NM, ISIN)
-   Deals universe: same CM_DEAL_IDs as Tab 1 (Q1 result)
-   ============================================================ */
-
-SELECT DISTINCT
-       de.CM_DEAL_ID                                  AS CM_DEAL_ID,          -- 1. CM Deal ID
-       fi.FNCL_INS_ISIN                               AS ISIN,                -- 2. ISIN (must be non-null)
-       fi.ISSR_NM                                     AS ISSUER_NAME,         -- 3. Issuer Name / underlying issuer
-       /* Effective date the ISIN was added to the Watch List */
-       GREATEST(dll.LIST_ADD_DT, di.CTRN_DT)          AS DATE_ADDED_TO_WL,    -- 4. Date added to the WL
-       /* Date removed from WL (or Still_On_List as safety, though Tab 1 excludes live WL) */
-       CASE
-            WHEN LEAST(
-                     NVL(di.OFF_DT,           SYSDATE + 1),
-                     NVL(dll.LIST_REMOVAL_DT, SYSDATE + 1)
-                 ) = SYSDATE + 1
-                 AND de.DL_WORKFLOW_STS NOT LIKE 'ARCHIVED'
-            THEN 'Still_On_List'
-            ELSE TO_CHAR(
-                     LEAST(
-                         NVL(di.OFF_DT,           SYSDATE + 1),
-                         NVL(dll.LIST_REMOVAL_DT, SYSDATE + 1)
-                     )
-                 )
-       END                                            AS DATE_REMOVED_FROM_WL, -- 5. Date removed from WL
-       cp.CMPY_NM                                     AS COMPANY_ISIN_TAGGED_TO -- 6. Company ISIN was tagged to
-FROM   DEAL de
-INNER JOIN DEAL_COMPANY dc
-        ON de.DEAL_ID = dc.DL_ID
-INNER JOIN CRU_OWNER.DEAL_TEAM dt
-        ON dt.DEAL_ID = de.DEAL_ID
-INNER JOIN CRU_OWNER.EMPLOYEE e
-        ON e.EMPLOYEE_ID = dt.EMPLOYEE_ID
-INNER JOIN CMPY cp
         ON cp.CMPY_ID = dc.CMPY_ID
 INNER JOIN DL_LIST dll
         ON dll.DL_CMPY_ID = dc.DL_CMPY_ID
