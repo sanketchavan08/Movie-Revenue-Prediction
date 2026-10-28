@@ -105,3 +105,16 @@ def build_metrics(summary, settings, mapping):
     log.info("Release %s (%s), Automation %s (%s)", s["release_pct"], release_status,
              s["automation_pct"], automation_status)
     return metrics
+
+
+def portfolio_status_line(kpi, overall_status, apps, target, lines):
+    """Slide 5/6 sentence. Colour follows the overall KPI (same as slide 4);
+    apps below target are listed by name.
+
+    kpi: 'release' or 'automation'.  apps: rows from Applications View (each has 'pct' and 'application').
+    """
+    text = lines[f"{kpi}_{overall_status}"]
+    below = [a["application"] for a in apps if kpi_status(a["pct"], target) == "red"]
+    if below:
+        text += lines["focus"].format(apps=", ".join(below))
+    return text

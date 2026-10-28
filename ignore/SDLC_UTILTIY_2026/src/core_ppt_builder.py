@@ -1,4 +1,5 @@
 """Generic PowerPoint helpers. Nothing in here knows about specific slides."""
+import copy
 import logging
 import re
 
@@ -7,6 +8,7 @@ from pptx.chart.data import CategoryChartData
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.oxml.ns import qn
+from pptx.util import Emu, Inches, Pt
 
 log = logging.getLogger(__name__)
 
@@ -118,12 +120,31 @@ class PPTBuilder:
         p = tf.paragraphs[0]
         for extra in tf.paragraphs[1:]:                     # drop extra paragraphs
             extra._p.getparent().remove(extra._p)
-        if p.runs:
-            p.runs[0].text = str(text)
+        text = str(text)
+        if text == "":
+            # Empty cell: keep the font size for the empty line but remove the runs
+            # (an empty run can be drawn at the default 18 pt and make the row tall).
+            if p.runs:
+                r_pr = p.runs[0]._r.find(qn("a:rPr"))
+                if r_pr is not None and r_pr.get("sz"):
+                    p._p.get_or_add_endParaRPr().set("sz", r_pr.get("sz"))
+            for run in p.runs:
+                run._r.getparent().remove(run._r)
+        elif p.runs:
+            p.runs[0].text = text
             for run in p.runs[1:]:
                 run._r.getparent().remove(run._r)
         else:
-            p.add_run().text = str(text)
+            # Cell was empty in the template: give the new text the cell's own font settings.
+            run = p.add_run()
+            run.text = text
+            end = p._p.find(qn("a:endParaRPr"))
+            if end is not None:
+                r_pr = run._r.get_or_add_rPr()
+                for key, value in end.attrib.items():
+                    r_pr.set(key, value)
+                for child in end:
+                    r_pr.append(copy.deepcopy(child))
 
     @staticmethod
     def set_cell_fill(cell, hex_color):
@@ -135,6 +156,95 @@ class PPTBuilder:
         if not shape.has_table:
             raise TypeError(f"Shape '{shape.name}' is not a table")
         return shape.table
+
+    def fill_repeating_table(self, shape, template_row, rows, fills=None):
+        """Rebuild a table with one row per item, styled like `template_row`.
+
+        rows:  list of lists of cell texts, e.g. [['109360-1', 'db-COOP', '100.00', ...], ...]
+        fills: optional {(row_index, col_index): 'RRGGBB'} for coloured cells (row_index 0 = first data row)
+        Everything above template_row (the header) is kept; the old data rows are removed.
+        """
+        table = self.get_table(shape)
+        tbl = table._tbl
+        tr_list = tbl.tr_lst
+        if template_row >= len(tr_list):
+            raise ValueError(f"'{shape.name}' has no row {template_row} to use as the row template")
+        pattern = copy.deepcopy(tr_list[template_row])
+        for tr in tr_list[template_row:]:                    # remove old data rows
+            tbl.remove(tr)
+
+        if not rows:
+            log.warning("'%s': no rows to show - leaving one empty row", shape.name)
+            rows = [[""] * len(table.columns)]
+        for r, values in enumerate(rows):
+            tbl.append(copy.deepcopy(pattern))
+            cells = table.rows[template_row + r].cells
+            for c, text in enumerate(values):
+                if c < len(cells):
+                    self.set_cell_text(cells[c], text)
+            for (fr, fc), color in (fills or {}).items():
+                if fr == r:
+                    self.set_cell_fill(cells[fc], color)
+
+        shape.height = sum(row.height for row in table.rows)  # PowerPoint grows rows for wrapped text itself
+        log.info("Table '%s': %d data rows", shape.name, len(rows))
+
+    def fit_table(self, shape, template_row, max_bottom_in, min_font_pt):
+        """Shrink the data rows' font so the table ends above `max_bottom_in` (inches from slide top).
+
+        Row heights stored in the file are only minimums - PowerPoint grows a row to fit its text -
+        so the drawn height is estimated from font size, cell margins and text wrapping.
+        Does nothing when the table already fits. Warns if even `min_font_pt` is not enough.
+        """
+        table = self.get_table(shape)
+        all_rows = list(table.rows)
+        header_h = sum(r.height for r in all_rows[:template_row])
+        data_rows = all_rows[template_row:]
+        col_widths = [c.width for c in table.columns]
+        available = Inches(max_bottom_in) - shape.top - header_h
+        current_pt = next((run.font.size.pt for c in data_rows[0].cells for p in c.text_frame.paragraphs
+                           for run in p.runs if run.font.size), 18.0)   # 18 pt = PowerPoint default
+        margin = Inches(0.02)
+
+        def drawn_height(font_pt, cell_margin, keep_row_heights=False):
+            """Estimated drawn height of the data rows. keep_row_heights: use the template's row
+            heights as a minimum (true for the current table, false once we resize the rows)."""
+            total = 0
+            for row in data_rows:
+                lines = 1
+                for cell, width in zip(row.cells, col_widths):
+                    usable_pt = Emu(width - cell.margin_left - cell.margin_right).pt
+                    chars_per_line = max(1, int(usable_pt / (font_pt * 0.55)))
+                    lines = max(lines, -(-len(cell.text) // chars_per_line))   # ceiling division
+                needed = Pt(lines * font_pt * 1.2) + 2 * cell_margin
+                total += max(row.height, needed) if keep_row_heights else needed
+            return total
+
+        margins_now = data_rows[0].cells[0].margin_top + data_rows[0].cells[0].margin_bottom
+        if drawn_height(current_pt, margins_now // 2, keep_row_heights=True) <= available:
+            return
+
+        font_pt = current_pt
+        while font_pt > min_font_pt and drawn_height(font_pt, margin) > available:
+            font_pt -= 0.5
+        line_h = Pt(font_pt * 1.2) + 2 * margin
+        for row in data_rows:
+            row.height = line_h                           # minimum; wrapped rows grow by themselves
+            for cell in row.cells:
+                cell.margin_top = cell.margin_bottom = margin
+                for p in cell.text_frame.paragraphs:
+                    for run in p.runs:
+                        run.font.size = Pt(font_pt)
+                    # empty cells keep the default 18 pt line height unless this is set too
+                    p._p.get_or_add_endParaRPr().set("sz", str(int(font_pt * 100)))
+        shape.height = sum(r.height for r in table.rows)
+
+        if drawn_height(font_pt, margin) > available:
+            log.warning("'%s': %d rows at %s pt (the minimum) may not fit - check the slide",
+                        shape.name, len(data_rows), font_pt)
+        else:
+            log.info("'%s': %d rows - tightened cell margins%s so the table fits", shape.name,
+                     len(data_rows), "" if font_pt == current_pt else f" and font {current_pt} -> {font_pt} pt")
 
     # ------------------------------------------------------------ indicators
     @staticmethod

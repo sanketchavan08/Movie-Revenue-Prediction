@@ -11,11 +11,12 @@ import argparse
 import logging
 import sys
 
-from core_extractor import read_summary
+from core_extractor import read_grouped_values, read_summary, read_table
 from core_history import HistoryBook
 from core_ppt_builder import PPTBuilder
-from core_transformer import build_metrics, month_window
-from slide_builders import fill_kpi_targets, fill_summary_tables, update_kpi_chart
+from core_transformer import build_metrics, month_window, portfolio_status_line
+from slide_builders import (fill_kpi_targets, fill_portfolio_automation, fill_portfolio_release,
+                            fill_summary_tables, update_kpi_chart)
 from utils_config import load_mapping, load_settings
 
 log = logging.getLogger("sdlc_deck")
@@ -31,9 +32,19 @@ def run(month=None, update_history=None):
 
     # 1. Extract: raw monthly Excel -> dict
     summary = read_summary(settings.input_path, mapping["summary_sheet"])
+    release_apps = read_table(settings.input_path, mapping["portfolio_release"])
+    automation_apps = read_table(settings.input_path, mapping["portfolio_automation"])
+    release_nc = read_grouped_values(settings.input_path, mapping["release_non_compliant_releases"])
+    manual_releases = read_grouped_values(settings.input_path, mapping["automation_manual_releases"])
+    manual_controls = read_grouped_values(settings.input_path, mapping["automation_manual_controls"])
 
     # 2. Transform: validate, round, decide green/red, pick the status sentence
     metrics = build_metrics(summary, settings, mapping)
+    lines, targets = mapping["portfolio_status_lines"], config["targets"]
+    metrics["release_portfolio_line"] = portfolio_status_line(
+        "release", metrics["release_status"], release_apps, targets["release"], lines)
+    metrics["automation_portfolio_line"] = portfolio_status_line(
+        "automation", metrics["automation_status"], automation_apps, targets["automation"], lines)
 
     # 3. History: put this month into the history (in memory), then read the windows
     history = HistoryBook(settings.history_path, mapping["history"])
@@ -47,6 +58,9 @@ def run(month=None, update_history=None):
     fill_kpi_targets(builder, mapping, config, grid_window)       # slide 2
     fill_summary_tables(builder, mapping, metrics)                # slide 4 tables
     update_kpi_chart(builder, mapping, chart_window)              # slide 4 chart
+    fill_portfolio_release(builder, mapping, config, release_apps, release_nc)      # slide 5
+    fill_portfolio_automation(builder, mapping, config, automation_apps,
+                              manual_controls, manual_releases)                    # slide 6
 
     leftovers = builder.leftover_tokens()
     if leftovers:

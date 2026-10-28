@@ -119,8 +119,9 @@ class HistoryBook:
             if old is not None and abs(old - new) > 1e-6:
                 log.warning("History %s %s: overwriting %.4f with %.4f", f"{month:%b %Y}", key, old, new)
             cell.value = new
-            if "%" not in (cell.number_format or ""):
-                cell.number_format = "0.00%"
+            # Use the same % format as the row above (e.g. '0%' for Release, '0.00%' for Automation)
+            above = self.ws.cell(r - 1, self.col[key]).number_format or ""
+            cell.number_format = above if "%" in above else "0.00%"
         log.info("History %s -> release %.4f, automation %.4f", f"{month:%b %Y}", release_frac, automation_frac)
 
     def _append_row(self, month):

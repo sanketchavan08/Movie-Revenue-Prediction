@@ -26,7 +26,17 @@
   "tokens": {
     "{{MON}}": "mon",
     "{{YYYY}}": "year",
-    "{{STATUS_LINE}}": "status_line"
+    "{{STATUS_LINE}}": "status_line",
+    "{{RELEASE_STATUS_LINE}}": "release_portfolio_line",
+    "{{AUTOMATION_STATUS_LINE}}": "automation_portfolio_line"
+  },
+
+  "portfolio_status_lines": {
+    "release_green":    "Compliance Portfolio is Green for Release Compliance KPI",
+    "release_red":      "Compliance Portfolio is Red for Release Compliance KPI",
+    "automation_green": "Compliance Portfolio is Green for Automation Compliance KPI",
+    "automation_red":   "Compliance Portfolio is Red for Automation Compliance KPI",
+    "focus":            ". More focus required on {apps}"
   },
 
   "status_lines": {
@@ -44,7 +54,7 @@
     "first_month_col": 1,
     "month_label": "abbr",
     "indicator_prefix": "ind_",
-    "indicator_colors": {"green": "00B050", "red": "FF0000"}
+    "indicator_colors": {"green": "92D050", "red": "FF7C80"}
   },
 
   "slide4_tables": [
@@ -79,5 +89,98 @@
       {"name": "Release KPI",    "field": "release"},
       {"name": "Automation KPI", "field": "automation"}
     ]
+  },
+
+  "portfolio_release": {
+    "sheet": "Applications View",
+    "header_row": 4,
+    "first_data_row": 5,
+    "key_field": "nar_id",
+    "columns": {
+      "nar_id":        {"col": "A", "header_contains": "Application Instance Id", "type": "text"},
+      "application":   {"col": "D", "header_contains": "Application Instance Name", "type": "text"},
+      "total":         {"col": "J", "header_contains": "# Releases"},
+      "compliant":     {"col": "O", "header_contains": "# Release Compliant"},
+      "non_compliant": {"col": "P", "header_contains": "Release Non Compliant", "blank_as_zero": true},
+      "pct":           {"col": "Q", "header_contains": "% Release Compliant"}
+    },
+    "table": {
+      "shape": "tbl_portfolio_release",
+      "template_row": 1,
+      "fit": {"max_bottom_in": 6.9, "min_font_pt": 7},
+      "columns": [
+        {"field": "nar_id",        "format": "text"},
+        {"field": "application",   "format": "text"},
+        {"field": "pct",           "format": "0.00", "status_fill": "release"},
+        {"field": "total",         "format": "int"},
+        {"field": "compliant",     "format": "int"},
+        {"field": "non_compliant", "format": "int"},
+        {"field": "non_compliant_releases", "format": "text"}
+      ]
+    }
+  },
+
+  "portfolio_automation": {
+    "sheet": "Applications View",
+    "header_row": 4,
+    "first_data_row": 5,
+    "key_field": "nar_id",
+    "columns": {
+      "nar_id":      {"col": "A",  "header_contains": "Application Instance Id", "type": "text"},
+      "application": {"col": "D",  "header_contains": "Application Instance Name", "type": "text"},
+      "total":       {"col": "S",  "header_contains": ""},
+      "automatic":   {"col": "T",  "header_contains": ""},
+      "pct":         {"col": "AA", "header_contains": ""}
+    },
+    "table": {
+      "shape": "tbl_portfolio_automation",
+      "template_row": 1,
+      "fit": {"max_bottom_in": 6.9, "min_font_pt": 7},
+      "columns": [
+        {"field": "nar_id",      "format": "text"},
+        {"field": "application", "format": "text"},
+        {"field": "pct",         "format": "0.00", "status_fill": "automation"},
+        {"field": "total",       "format": "int"},
+        {"field": "automatic",   "format": "int"},
+        {"field": "manual_controls", "format": "text"},
+        {"field": "manual_releases", "format": "text"}
+      ]
+    }
+  },
+
+  "release_non_compliant_releases": {
+    "sheet": "Raw Data-RMC",
+    "header_row": 5,
+    "first_data_row": 6,
+    "key_header": "Application Instance ID",
+    "value_header": "Release Number",
+    "filters": {
+      "RMC Control?": "Yes",
+      "Release Compliance status": "Non Compliant Release"
+    }
+  },
+
+  "automation_manual_releases": {
+    "sheet": "Raw Data-RMC",
+    "header_row": 5,
+    "first_data_row": 6,
+    "key_header": "Application Instance ID",
+    "value_header": "Release Number",
+    "filters": {
+      "RMC Control?": "Yes",
+      "Control Closure Pattern KPI2": "Closed Manually"
+    }
+  },
+
+  "automation_manual_controls": {
+    "sheet": "Raw Data-RMC",
+    "header_row": 5,
+    "first_data_row": 6,
+    "key_header": "Application Instance ID",
+    "value_header": "Control Name",
+    "filters": {
+      "RMC Control?": "Yes",
+      "Control Closure Pattern KPI2": "Closed Manually"
+    }
   }
 }
