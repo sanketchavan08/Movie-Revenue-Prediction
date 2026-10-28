@@ -1,0 +1,83 @@
+{
+  "summary_sheet": {
+    "sheet": "KPI1 & KPI2 Summary",
+    "fields": {
+      "reporting_period":       {"cell": "A2",  "type": "text"},
+      "release_pct":            {"cell": "B7",  "header_cell": "B6",  "header_contains": "% Release Compliant"},
+      "total_releases":         {"cell": "F7",  "header_cell": "F6",  "header_contains": "Total Releases"},
+      "releases_compliant":     {"cell": "H7",  "header_cell": "H6",  "header_contains": "# Release Compliant"},
+      "releases_non_compliant": {"cell": "J7",  "header_cell": "J6",  "header_contains": "Release Non Compliant", "blank_as_zero": true},
+      "controls_automatic":     {"cell": "B11", "header_cell": "B10", "header_contains": "Closed Approved Interface"},
+      "controls_manual":        {"cell": "D11", "header_cell": "D10", "header_contains": "Closed Only Manually", "blank_as_zero": true},
+      "controls_total":         {"cell": "J11", "header_cell": "J10", "header_contains": "Total control Closed"},
+      "automation_pct":         {"cell": "B14", "header_cell": "B13", "header_contains": "% Closed Approved Interface"}
+    }
+  },
+
+  "history": {
+    "sheet": "KPI_PROGRESS",
+    "first_data_row": 2,
+    "year_col": "A",
+    "month_col": "B",
+    "release_col": "C",
+    "automation_col": "D"
+  },
+
+  "tokens": {
+    "{{MON}}": "mon",
+    "{{YYYY}}": "year",
+    "{{STATUS_LINE}}": "status_line"
+  },
+
+  "status_lines": {
+    "green_green": "Compliance Portfolio is Green for both Release and Automation Compliance KPI",
+    "red_green":   "Compliance Portfolio is Red for Release Compliance KPI and Green for Automation Compliance KPI",
+    "green_red":   "Compliance Portfolio is Green for Release Compliance KPI and Red for Automation Compliance KPI",
+    "red_red":     "Compliance Portfolio is Red for both Release and Automation Compliance KPI"
+  },
+
+  "kpi_grid": {
+    "shape": "tbl_kpi_targets",
+    "header_row": 0,
+    "target_row": 1,
+    "achieved_row": 2,
+    "first_month_col": 1,
+    "month_label": "abbr",
+    "indicator_prefix": "ind_",
+    "indicator_colors": {"green": "00B050", "red": "FF0000"}
+  },
+
+  "slide4_tables": [
+    {
+      "shape": "tbl_release_summary",
+      "data_row": 1,
+      "columns": {
+        "1": {"field": "release_pct",            "format": "0.0", "status_fill": "release"},
+        "2": {"field": "total_releases",         "format": "int"},
+        "3": {"field": "releases_compliant",     "format": "int"},
+        "4": {"field": "releases_non_compliant", "format": "int"}
+      }
+    },
+    {
+      "shape": "tbl_automation_summary",
+      "data_row": 1,
+      "columns": {
+        "1": {"field": "automation_pct",     "format": "0.00", "status_fill": "automation"},
+        "2": {"field": "controls_total",     "format": "int"},
+        "3": {"field": "controls_automatic", "format": "int"},
+        "4": {"field": "controls_manual",    "format": "int"}
+      }
+    }
+  ],
+  "status_fill_colors": {"green": "92D050", "red": "FF7C80"},
+
+  "kpi_chart": {
+    "shape": "chart_kpi_progress",
+    "category_style": "year_month",
+    "number_format": "0.00%",
+    "series": [
+      {"name": "Release KPI",    "field": "release"},
+      {"name": "Automation KPI", "field": "automation"}
+    ]
+  }
+}

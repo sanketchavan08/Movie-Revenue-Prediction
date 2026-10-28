@@ -1,0 +1,14 @@
+{
+  "report_month": "2026-09",
+  "input_excel_name": "SDLC-G Usage RMC- With InScope SDLC Templates_KPI1 and KPI2.xlsx",
+  "history_excel_name": "SDLC_PROGRESS_GRAPHS.xlsx",
+  "template_name": "SDLC-Governance_MMM_YYYY_Compliance.pptx",
+  "output_name": "SDLC-Governance_{MON}_{YYYY}_Compliance.pptx",
+  "targets": {
+    "release": 100,
+    "automation": 90
+  },
+  "slide2_months": 4,
+  "chart_months": 13,
+  "update_history": true
+}
